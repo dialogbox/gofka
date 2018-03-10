@@ -1,24 +1,9 @@
 package client
 
 import (
-	"strings"
-
-	cluster "github.com/bsm/sarama-cluster"
+	"github.com/Shopify/sarama"
 )
 
-type KafkaClient struct {
-	brokers []string
-	config  *cluster.Config
-}
-
-func NewKafkaClient(brokerlist string) *KafkaClient {
-	brokers := strings.Split(brokerlist, ",")
-	if len(brokers) == 0 {
-		return nil
-	}
-
-	return &KafkaClient{
-		brokers: brokers,
-		config:  nil,
-	}
+func AllTopicInfo(client sarama.Client) ([]sarama.TopicMetadata, error) {
+	return nil, nil
 }
