@@ -6,16 +6,51 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-func TopicsInfo(client sarama.Client, topics ...string) ([]*sarama.TopicMetadata, error) {
+type GofkaClient struct {
+	bootstrapServers []string
+	client           sarama.Client
+}
+
+func NewGofkaClient(bootstrapServers ...string) (*GofkaClient, error) {
+	if len(bootstrapServers) == 0 {
+		return nil, fmt.Errorf("Atleast one bootstrap server must be provided")
+	}
+
+	config := sarama.NewConfig()
+	client, err := sarama.NewClient(bootstrapServers, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GofkaClient{
+		bootstrapServers: bootstrapServers,
+		client:           client,
+	}, nil
+}
+
+func (g *GofkaClient) Close() error {
+	return g.client.Close()
+}
+
+func (g *GofkaClient) TopicNames() ([]string, error) {
+	topics, err := g.client.Topics()
+	if err != nil {
+		return nil, err
+	}
+
+	return topics, nil
+}
+
+func (g *GofkaClient) TopicInfos(topics ...string) ([]*sarama.TopicMetadata, error) {
 	var err error
 	if len(topics) == 0 {
-		topics, err = client.Topics()
+		topics, err = g.client.Topics()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	brokers := client.Brokers()
+	brokers := g.client.Brokers()
 	if len(brokers) == 0 {
 		return nil, fmt.Errorf("No broker is available")
 	}

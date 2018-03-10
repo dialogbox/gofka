@@ -6,15 +6,14 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-func TestGetAllTopicInfo(t *testing.T) {
-	config := sarama.NewConfig()
-	client, err := sarama.NewClient([]string{"localhost:9092"}, config)
+func TestGetTopicInfos(t *testing.T) {
+	client, err := NewGofkaClient("localhost:9092")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer client.Close()
 
-	topicInfo, err := TopicsInfo(client)
+	topicInfo, err := client.TopicInfos()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,13 +22,30 @@ func TestGetAllTopicInfo(t *testing.T) {
 		t.Log(topic.Name)
 	}
 
-	topicInfo, err = TopicsInfo(client, "dialogbox", "_schemas")
+	topicInfo, err = client.TopicInfos("dialogbox", "_schemas")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, topic := range topicInfo {
-		t.Log(topic.Name)
+	for i := range topicInfo {
+		t.Log(topicInfo[i].Name)
+	}
+}
+
+func TestGetTopicNames(t *testing.T) {
+	client, err := NewGofkaClient("localhost:9092")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	topicNames, err := client.TopicNames()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range topicNames {
+		t.Log(topicNames[i])
 	}
 }
 
