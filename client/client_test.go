@@ -6,20 +6,30 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-func TestGetTopicInfo(t *testing.T) {
+func TestGetAllTopicInfo(t *testing.T) {
 	config := sarama.NewConfig()
 	client, err := sarama.NewClient([]string{"localhost:9092"}, config)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer client.Close()
 
-	topicInfo, err := AllTopicInfo(client)
+	topicInfo, err := TopicsInfo(client)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, topic := range topicInfo {
-		t.Log(topic)
+		t.Log(topic.Name)
+	}
+
+	topicInfo, err = TopicsInfo(client, "dialogbox", "_schemas")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, topic := range topicInfo {
+		t.Log(topic.Name)
 	}
 }
 
@@ -29,6 +39,7 @@ func TestBrokerMetadata(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer broker.Close()
 
 	metas, err := broker.GetMetadata(&sarama.MetadataRequest{
 		Topics: []string{"dialogbox", "_schemas"},
