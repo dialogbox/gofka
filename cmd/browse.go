@@ -15,11 +15,9 @@
 package cmd
 
 import (
-	"html/template"
-	"io"
 	"net/http"
 
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -42,26 +40,24 @@ func init() {
 
 func runBrowserWebServer() {
 	addr := viper.GetString("browser.address")
-	e := echo.New()
-	e.Renderer = &Template{
-		templates: template.Must(template.ParseGlob("public/views/*.html")),
-	}
+	router := gin.Default()
+	router.LoadHTMLGlob("templates/*")
 
-	e.GET("/b", browse)
-	e.GET("/b/:topic", browse)
-	e.GET("/b/:topic/:partitions", browse)
+	router.GET("/b", topicList)
+	router.GET("/b/:topic", browse)
+	router.GET("/b/:topic/:partitions", browse)
 
-	e.Logger.Fatal(e.Start(addr))
+	router.Run(addr)
 }
 
-type Template struct {
-	templates *template.Template
+func topicList(c *gin.Context) {
+	c.HTML(http.StatusOK, "topiclist.gohtml", gin.H{
+		"title": "Kafka Data Browser",
+	})
 }
 
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-func browse(c echo.Context) error {
-	return c.Render(http.StatusOK, "browse", "World")
+func browse(c *gin.Context) {
+	c.HTML(http.StatusOK, "browse.gohtml", gin.H{
+		"title": "Kafka Data Browser",
+	})
 }
