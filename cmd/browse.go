@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"html/template"
+	"io"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -41,8 +43,25 @@ func init() {
 func runBrowserWebServer() {
 	addr := viper.GetString("browser.address")
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+	e.Renderer = &Template{
+		templates: template.Must(template.ParseGlob("public/views/*.html")),
+	}
+
+	e.GET("/b", browse)
+	e.GET("/b/:topic", browse)
+	e.GET("/b/:topic/:partitions", browse)
+
 	e.Logger.Fatal(e.Start(addr))
+}
+
+type Template struct {
+	templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+func browse(c echo.Context) error {
+	return c.Render(http.StatusOK, "browse", "World")
 }
