@@ -44,3 +44,6 @@
 [[constraint]]
   name = "github.com/Shopify/sarama"
   version = "1.16.0"
+[[constraint]]
+  name = "github.com/labstack/echo"
+  version = "3.2.6"

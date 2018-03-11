@@ -17,6 +17,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/dialogbox/gofka/kafka"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -25,13 +27,7 @@ var toggle bool
 // topicsCmd represents the topics command
 var topicsCmd = &cobra.Command{
 	Use:   "topics",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Print list of topics",
 	Run: func(cmd *cobra.Command, args []string) {
 		printTopicList()
 	},
@@ -42,5 +38,18 @@ func init() {
 }
 
 func printTopicList() {
-	fmt.Printf("topics of %s, %s\n", zkHosts, brokers)
+	client, err := kafka.NewClient("localhost:9092")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer client.Close()
+
+	topics, err := client.TopicNames()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	for i := range topics {
+		fmt.Println(topics[i])
+	}
 }

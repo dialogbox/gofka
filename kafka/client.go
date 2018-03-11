@@ -1,4 +1,4 @@
-package client
+package kafka
 
 import (
 	"fmt"
@@ -6,12 +6,12 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-type GofkaClient struct {
+type Client struct {
 	bootstrapServers []string
 	client           sarama.Client
 }
 
-func NewGofkaClient(bootstrapServers ...string) (*GofkaClient, error) {
+func NewClient(bootstrapServers ...string) (*Client, error) {
 	if len(bootstrapServers) == 0 {
 		return nil, fmt.Errorf("Atleast one bootstrap server must be provided")
 	}
@@ -22,17 +22,17 @@ func NewGofkaClient(bootstrapServers ...string) (*GofkaClient, error) {
 		return nil, err
 	}
 
-	return &GofkaClient{
+	return &Client{
 		bootstrapServers: bootstrapServers,
 		client:           client,
 	}, nil
 }
 
-func (g *GofkaClient) Close() error {
+func (g *Client) Close() error {
 	return g.client.Close()
 }
 
-func (g *GofkaClient) TopicNames() ([]string, error) {
+func (g *Client) TopicNames() ([]string, error) {
 	topics, err := g.client.Topics()
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (g *GofkaClient) TopicNames() ([]string, error) {
 	return topics, nil
 }
 
-func (g *GofkaClient) TopicInfos(topics ...string) ([]*sarama.TopicMetadata, error) {
+func (g *Client) TopicInfos(topics ...string) ([]*sarama.TopicMetadata, error) {
 	var err error
 	if len(topics) == 0 {
 		topics, err = g.client.Topics()

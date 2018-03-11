@@ -1,4 +1,4 @@
-package client
+package kafka
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetTopicInfos(t *testing.T) {
-	client, err := NewGofkaClient("localhost:9092")
+	client, err := NewClient("localhost:9092")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestGetTopicInfos(t *testing.T) {
 }
 
 func TestGetTopicNames(t *testing.T) {
-	client, err := NewGofkaClient("localhost:9092")
+	client, err := NewClient("localhost:9092")
 	if err != nil {
 		t.Fatal(err)
 	}

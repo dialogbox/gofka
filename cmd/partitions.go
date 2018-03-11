@@ -16,35 +16,48 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
 
+	"github.com/dialogbox/gofka/kafka"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 // partitionsCmd represents the partitions command
 var partitionsCmd = &cobra.Command{
 	Use:   "partitions",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Print list of partitions",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("partitions called")
+		printPartitions(args)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(partitionsCmd)
+}
 
-	// Here you will define your flags and configuration settings.
+func printPartitions(topics []string) {
+	client, err := kafka.NewClient("localhost:9092")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer client.Close()
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// partitionsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	topicInfos, err := client.TopicInfos(topics...)
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// partitionsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	for _, topicInfo := range topicInfos {
+		fmt.Println("Topic : ", topicInfo.Name)
+
+		parts := topicInfo.Partitions
+		sort.Slice(parts, func(i, j int) bool {
+			return parts[i].ID < parts[j].ID
+		})
+
+		for _, part := range parts {
+			fmt.Printf("ID: %v\tLeader: %v\tReplica: %v\tIsr: %v\n", part.ID, part.Leader, part.Replicas, part.Isr)
+		}
+	}
 }
