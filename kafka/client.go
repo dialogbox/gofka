@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Shopify/sarama"
 )
@@ -69,4 +70,44 @@ func (g *Client) TopicInfos(topics ...string) ([]*sarama.TopicMetadata, error) {
 	}
 
 	return metas.Topics, nil
+}
+
+func (g *Client) OffsetRange(topic string, part int32) (int64, int64, error) {
+	lw, err := g.client.GetOffset(topic, part, sarama.OffsetOldest)
+	if err != nil {
+		return -1, -1, err
+	}
+
+	hw, err := g.client.GetOffset(topic, part, sarama.OffsetNewest)
+	if err != nil {
+		return -1, -1, err
+	}
+
+	return lw, hw, nil
+}
+
+func (g *Client) FetchData(topic string, part int32, offset int64, n int32, timeout time.Duration) ([]*sarama.ConsumerMessage, error) {
+	consumer, err := sarama.NewConsumerFromClient(g.client)
+	if err != nil {
+		return nil, err
+	}
+	defer consumer.Close()
+
+	partConsumer, err := consumer.ConsumePartition(topic, part, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*sarama.ConsumerMessage, 0, n)
+	for {
+		select {
+		case message := <-partConsumer.Messages():
+			result = append(result, message)
+			if len(result) >= int(n) {
+				return result, nil
+			}
+		case <-time.After(timeout):
+			return result, nil
+		}
+	}
 }

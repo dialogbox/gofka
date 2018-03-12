@@ -37,7 +37,7 @@ func init() {
 }
 
 func printPartitions(topics []string) {
-	client, err := kafka.NewClient("localhost:9092")
+	client, err := kafka.NewClient(brokers...)
 	if err != nil {
 		logrus.Fatal(err)
 	}

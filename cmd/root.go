@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
@@ -25,8 +26,10 @@ import (
 )
 
 var cfgFile string
-var zkHosts string
-var brokers string
+var zkHostsStr string
+var brokersStr string
+var zkHosts []string
+var brokers []string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -56,8 +59,8 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gofka.yaml)")
-	rootCmd.PersistentFlags().StringVar(&zkHosts, "zkhosts", "localhost:2181", "zkHost list")
-	rootCmd.PersistentFlags().StringVar(&brokers, "brokers", "localhost:9092", "kafka broker list")
+	rootCmd.PersistentFlags().StringVar(&zkHostsStr, "zkhosts", "localhost:2181", "zkHost list")
+	rootCmd.PersistentFlags().StringVar(&brokersStr, "brokers", "localhost:9092", "kafka broker list")
 
 	viper.BindPFlag("zkhosts", rootCmd.PersistentFlags().Lookup("zkhosts"))
 	viper.BindPFlag("brokers", rootCmd.PersistentFlags().Lookup("brokers"))
@@ -88,6 +91,8 @@ func initConfig() {
 		logrus.Infoln("Using config file: ", viper.ConfigFileUsed())
 	}
 
-	zkHosts = viper.GetString("zkhosts")
-	brokers = viper.GetString("brokers")
+	zkHostsStr = viper.GetString("zkhosts")
+	brokersStr = viper.GetString("brokers")
+	zkHosts = strings.Split(viper.GetString("zkhosts"), ",")
+	brokers = strings.Split(viper.GetString("brokers"), ",")
 }

@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Shopify/sarama"
 )
@@ -22,7 +23,7 @@ func TestGetTopicInfos(t *testing.T) {
 		t.Log(topic.Name)
 	}
 
-	topicInfo, err = client.TopicInfos("dialogbox", "_schemas")
+	topicInfo, err = client.TopicInfos("__consumer_offsets", "_schemas")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +59,7 @@ func TestBrokerMetadata(t *testing.T) {
 	defer broker.Close()
 
 	metas, err := broker.GetMetadata(&sarama.MetadataRequest{
-		Topics: []string{"dialogbox", "_schemas"},
+		Topics: []string{"__consumer_offsets", "_schemas"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -66,5 +67,51 @@ func TestBrokerMetadata(t *testing.T) {
 
 	for _, meta := range metas.Topics {
 		t.Logf("%s, %v", meta.Name, meta.Partitions)
+	}
+}
+
+func TestOffsetRange(t *testing.T) {
+	testTopic := "dialogbox"
+	client, err := NewClient("localhost:9092")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	topicInfo, err := client.TopicInfos(testTopic)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, partInfo := range topicInfo[0].Partitions {
+		lw, hw, err := client.OffsetRange(testTopic, partInfo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Logf("%s[%v] : %v ~ %v\n", testTopic, partInfo.ID, lw, hw)
+	}
+}
+
+func TestFetchData(t *testing.T) {
+	testTopic := "dialogbox"
+	client, err := NewClient("localhost:9092")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	lw, _, err := client.OffsetRange(testTopic, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	messages, err := client.FetchData(testTopic, 0, lw, 10, 2*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, m := range messages {
+		t.Logf("%v, %v, Header: %v, Key: [%v], Value: [%v]", m.Offset, m.Timestamp, m.Headers, m.Key, string(m.Value))
 	}
 }
