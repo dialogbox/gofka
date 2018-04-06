@@ -71,7 +71,7 @@ func TestBrokerMetadata(t *testing.T) {
 }
 
 func TestOffsetRange(t *testing.T) {
-	testTopic := "dialogbox"
+	testTopic := "testtopic"
 	client, err := NewClient("localhost:9092")
 	if err != nil {
 		t.Fatal(err)
@@ -93,20 +93,38 @@ func TestOffsetRange(t *testing.T) {
 	}
 }
 
-func TestFetchData(t *testing.T) {
-	testTopic := "dialogbox"
+func TestListGroups(t *testing.T) {
+	// testTopic := "testtopic"
 	client, err := NewClient("localhost:9092")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer client.Close()
 
-	lw, _, err := client.OffsetRange(testTopic, 0)
+	groups, err := client.ListGroups()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	messages, err := client.FetchData(testTopic, 0, lw, 10, 2*time.Second)
+	t.Log(groups)
+}
+
+func TestFetchData(t *testing.T) {
+	testTopic := "testtopic"
+	client, err := NewClient("localhost:9092")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	lw, hw, err := client.OffsetRange(testTopic, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("%v ~ %v", lw, hw)
+
+	messages, err := client.FetchData(testTopic, 0, lw, 10, 20*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}

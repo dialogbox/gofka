@@ -1,3 +1,5 @@
+.vscode
+
 # Binaries for programs and plugins
 *.exe
 *.dll
@@ -15,4 +17,4 @@
 
 vendor/
 
-mpipego
+gofka
