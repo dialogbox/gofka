@@ -1,6 +1,9 @@
 package kafka
 
 import (
+	"log"
+	"os"
+	"os/signal"
 	"testing"
 	"time"
 
@@ -91,6 +94,74 @@ func TestOffsetRange(t *testing.T) {
 
 		t.Logf("%s[%v] : %v ~ %v\n", testTopic, partInfo.ID, lw, hw)
 	}
+}
+
+func TestConsumePartition(t *testing.T) {
+	testTopic := "testtopic"
+	consumer, err := sarama.NewConsumer([]string{"localhost:9092"}, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := consumer.Close(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	partitionConsumer, err := consumer.ConsumePartition(testTopic, 0, 10)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := partitionConsumer.Close(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	// Trap SIGINT to trigger a shutdown.
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt)
+
+	consumed := 0
+ConsumerLoop:
+	for consumed < 3 {
+		select {
+		case msg := <-partitionConsumer.Messages():
+			log.Printf("Consumed message (%d): %v\n", msg.Offset, msg.Timestamp)
+			consumed++
+		case <-signals:
+			break ConsumerLoop
+		}
+	}
+
+	log.Printf("Consumed: %d\n", consumed)
+
+}
+
+func TestFetchFromBroker(t *testing.T) {
+	testTopic := "testtopic"
+	broker := sarama.NewBroker("localhost:9092")
+
+	err := broker.Open(nil)
+	if err != nil {
+		panic(err)
+	}
+
+	req := &sarama.FetchRequest{}
+	req.AddBlock(testTopic, 0, 3, 1024*1024)
+	res, err := broker.Fetch(req)
+	if err != nil {
+		panic(err)
+	}
+
+	t.Log(res.GetBlock(testTopic, 0).Records.RecordBatch)
+
+	// for _, r := range res.GetBlock(testTopic, 0).Records.RecordBatch.Records {
+	// 	t.Log(r)
+	// }
+
 }
 
 func TestListGroups(t *testing.T) {
